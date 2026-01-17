@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>ThreadSnap</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <h2>ThreadSnap</h2>
+
+  <div id="setup">
+    <input type="password" id="apiKey" placeholder="Enter GROK API Key" />
+    <label>
+      <input type="checkbox" id="rememberKey" />
+      Remember API key
+    </label>
+    <button id="saveKey">Save & Continue</button>
+  </div>
+
+  <div id="main" style="display:none;">
+    <button id="summarize">Summarize Current Chat</button>
+    <button id="editPrompt">Edit Prompt</button>
+
+    <textarea id="output" readonly placeholder="Context block will appear here..."></textarea>
+    <button id="copy">Copy</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
