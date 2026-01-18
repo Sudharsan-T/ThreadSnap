@@ -1,19 +1,19 @@
 {
   "manifest_version": 3,
   "name": "ThreadSnap",
-  "description": "Compress long AI chats into reusable context blocks",
   "version": "0.1.0",
-  "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["https://*/*"],
+  "description": "Compress AI chats into reusable context blocks",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://api.groq.com/*"
+  ],
   "action": {
     "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-  "https://chatgpt.com/*",
-  "https://chat.openai.com/*"],
-      "js": ["content.js"]
-    }
-  ]
+  }
 }

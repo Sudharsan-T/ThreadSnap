@@ -9,7 +9,7 @@ const summarizeBtn = document.getElementById("summarize");
 const outputBox = document.getElementById("output");
 const copyBtn = document.getElementById("copy");
 
-/*  INITIAL LOAD */
+/* ---------- INITIAL LOAD ---------- */
 
 chrome.storage.local.get(["apiKey"], (result) => {
   if (result.apiKey) {
@@ -18,7 +18,7 @@ chrome.storage.local.get(["apiKey"], (result) => {
   }
 });
 
-/*  SAVE API KEY */
+/* ---------- SAVE API KEY ---------- */
 
 saveKeyBtn.onclick = () => {
   const key = apiKeyInput.value.trim();
@@ -35,7 +35,7 @@ saveKeyBtn.onclick = () => {
   mainDiv.style.display = "block";
 };
 
-/* SUMMARIZE CHAT */
+/* ---------- SUMMARIZE CHAT ---------- */
 
 summarizeBtn.onclick = async () => {
   outputBox.value = "Summarizing chat...";
@@ -43,23 +43,39 @@ summarizeBtn.onclick = async () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || !tabs.length) {
       outputBox.value = "";
-      alert("No active tab found.");
+      alert("No active tab found");
       return;
     }
 
-    chrome.tabs.sendMessage(
-      tabs[0].id,
-      { type: "GET_CHAT" },
-      async (response) => {
-        if (chrome.runtime.lastError) {
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tabs[0].id },
+        func: () => {
+          const nodes = document.querySelectorAll('[data-message-author-role]');
+          const messages = [];
+
+          nodes.forEach((node) => {
+            const role = node.getAttribute("data-message-author-role");
+            const content = node.innerText?.trim();
+            if (role && content) {
+              messages.push({ role, content });
+            }
+          });
+
+          return messages;
+        }
+      },
+      async (results) => {
+        if (chrome.runtime.lastError || !results || !results[0]) {
           outputBox.value = "";
-          alert("Content script not available on this page.");
+          alert("Failed to read chat");
           return;
         }
 
-        if (!response || !response.messages || response.messages.length === 0) {
+        const messages = results[0].result;
+        if (!messages.length) {
           outputBox.value = "";
-          alert("No chat messages found.");
+          alert("No messages found");
           return;
         }
 
@@ -68,31 +84,77 @@ summarizeBtn.onclick = async () => {
 
         if (!apiKey) {
           outputBox.value = "";
-          alert("API key not found. Please enter your API key.");
+          alert("API key missing");
           return;
         }
 
         try {
-          const summary = await callGrok(apiKey, response.messages);
-          outputBox.value = summary;
+          const chunks = chunkMessages(messages, 2000);
+          const miniSummaries = [];
+
+          for (let i = 0; i < chunks.length; i++) {
+            const mini = await callGrok(apiKey, [
+              {
+                role: "system",
+                content:
+                  "Summarize this conversation chunk. Preserve facts, decisions, and assumptions. Be concise."
+              },
+              ...chunks[i]
+            ]);
+
+            miniSummaries.push(mini);
+
+            // small delay to avoid rate limits
+            await sleep(1500);
+          }
+
+          const finalSummary = await callGrok(apiKey, [
+            {
+              role: "system",
+              content: `
+You are creating a CONTEXT HANDOFF block for chat continuation.
+
+Rules:
+- Do not summarize again
+- Do not explain
+- Do not add ideas
+- Output plain text only
+
+Structure:
+SYSTEM CONTEXT:
+TOPIC CONTEXT:
+ANALYSIS STATE:
+KEY FACTS & ASSUMPTIONS:
+OPEN DIRECTIONS:
+INSTRUCTIONS FOR CONTINUATION:
+`
+            },
+            {
+              role: "user",
+              content: miniSummaries.join("\n\n")
+            }
+          ]);
+
+          outputBox.value = finalSummary;
         } catch (err) {
           console.error(err);
           outputBox.value = "";
-          alert("Failed to summarize chat. Check API key or network.");
+          alert(err.message || "Summarization failed");
         }
       }
     );
   });
 };
 
-/* COPY */
+/* ---------- COPY ---------- */
 
 copyBtn.onclick = () => {
-  if (!outputBox.value) return;
-  navigator.clipboard.writeText(outputBox.value);
+  if (outputBox.value) {
+    navigator.clipboard.writeText(outputBox.value);
+  }
 };
 
-/* HELPERS */
+/* ---------- HELPERS ---------- */
 
 function getStoredKey() {
   return new Promise((resolve) => {
@@ -102,29 +164,17 @@ function getStoredKey() {
   });
 }
 
-/* GROQ CALL */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* ---------- GROQ CALL ---------- */
 
 async function callGrok(apiKey, messages) {
-  const prompt = `
-You are a chat context distillation engine.
-
-Compress the chat into a reusable CONTEXT BLOCK.
-
-Rules:
-- Be concise and structured
-- Remove casual conversation
-- Preserve goals, constraints, decisions
-- Output plain text only
-
-Format:
-SYSTEM CONTEXT:
-USER PROFILE:
-CURRENT GOALS:
-KEY DECISIONS:
-CONSTRAINTS:
-ASSUMPTIONS:
-OPEN THREADS:
-`;
+  const finalMessages = [
+    ...messages,
+    { role: "user", content: "Perform the task as instructed above." }
+  ];
 
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
@@ -135,21 +185,56 @@ OPEN THREADS:
         "Authorization": "Bearer " + apiKey
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "llama-3.1-8b-instant",
         temperature: 0,
-        messages: [
-          { role: "system", content: prompt },
-          ...messages
-        ]
+        max_tokens: 200,
+        messages: finalMessages
       })
     }
   );
 
   const data = await response.json();
 
-  if (!data.choices || !data.choices.length) {
-    throw new Error("Invalid LLM response");
+  if (data.error) {
+    throw new Error(data.error.message);
   }
 
-  return data.choices[0].message.content;
+  if (
+    !data.choices ||
+    !data.choices.length ||
+    !data.choices[0].message ||
+    !data.choices[0].message.content ||
+    !data.choices[0].message.content.trim()
+  ) {
+    throw new Error("Empty model response");
+  }
+
+  return data.choices[0].message.content.trim();
+}
+
+/* ---------- CHUNKING ---------- */
+
+function chunkMessages(messages, maxChars = 3000) {
+  const chunks = [];
+  let currentChunk = [];
+  let currentSize = 0;
+
+  for (const msg of messages) {
+    const size = msg.content.length;
+
+    if (currentSize + size > maxChars) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentSize = 0;
+    }
+
+    currentChunk.push(msg);
+    currentSize += size;
+  }
+
+  if (currentChunk.length) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
 }

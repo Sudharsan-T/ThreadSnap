@@ -1,18 +1,16 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "GET_CHAT") {
-    const messages = [];
+(function () {
+  console.log("ThreadSnap content script injected (dynamic)");
 
-    const userMessages = document.querySelectorAll('[data-message-author-role="user"]');
-    const assistantMessages = document.querySelectorAll('[data-message-author-role="assistant"]');
+  const nodes = document.querySelectorAll('[data-message-author-role]');
+  const messages = [];
 
-    userMessages.forEach((node) => {
-      messages.push({ role: "user", content: node.innerText });
-    });
+  nodes.forEach((node) => {
+    const role = node.getAttribute("data-message-author-role");
+    const content = node.innerText?.trim();
+    if (role && content) {
+      messages.push({ role, content });
+    }
+  });
 
-    assistantMessages.forEach((node) => {
-      messages.push({ role: "assistant", content: node.innerText });
-    });
-
-    sendResponse({ messages });
-  }
-});
+  return messages;
+})();
