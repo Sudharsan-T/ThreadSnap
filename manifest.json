@@ -3,16 +3,26 @@
   "name": "ThreadSnap",
   "version": "0.1.0",
   "description": "Compress AI chats into reusable context blocks",
+
   "permissions": [
     "storage",
     "activeTab",
     "scripting"
   ],
+
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://api.groq.com/*"
   ],
+
+  "icons": {
+    "16": "logo.png",
+    "32": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
+
   "action": {
     "default_popup": "popup.html"
   }
