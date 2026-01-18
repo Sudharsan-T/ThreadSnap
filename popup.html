@@ -1,29 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ThreadSnap</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
+  <!-- SETUP SCREEN -->
+  <div id="setup" class="container">
+    <h1>ThreadSnap</h1>
 
-  <h2>ThreadSnap</h2>
+    <label class="label">GROQ API Key</label>
+    <input
+      id="apiKey"
+      type="password"
+      placeholder="Paste your API key"
+      autocomplete="off"
+    />
 
-  <div id="setup">
-    <input type="password" id="apiKey" placeholder="Enter GROK API Key" />
-    <label>
+    <label class="checkbox">
       <input type="checkbox" id="rememberKey" />
-      Remember API key
+      Remember API key on this device
     </label>
-    <button id="saveKey">Save & Continue</button>
+
+    <button id="saveKey">Continue</button>
+
+    <div class="footer">
+      made by
+      <a href="https://x.com/Dharsant7" target="_blank">Dharsan</a>
+    </div>
   </div>
 
-  <div id="main" style="display:none;">
-    <button id="summarize">Summarize Current Chat</button>
-    <button id="editPrompt">Edit Prompt</button>
+  <!-- MAIN SCREEN -->
+  <div id="main" class="container" style="display: none;">
+    <h1>ThreadSnap</h1>
 
-    <textarea id="output" readonly placeholder="Context block will appear here..."></textarea>
+    <button id="summarize">Extract Context</button>
+
+    <textarea
+      id="output"
+      placeholder="Extracted context will appear here"
+      readonly
+    ></textarea>
+
     <button id="copy">Copy</button>
+
+    <div class="footer">
+      made  by
+      <a href="https://x.com/Dharsant7" target="_blank">Dharsan</a>
+    </div>
   </div>
 
   <script src="popup.js"></script>
