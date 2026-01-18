@@ -72,10 +72,14 @@ ThreadSnap is not published on the Chrome Web Store.
 
 ### Load Locally
 
-1. Clone or download this repository
+1. Download the latest version from the Releases
 2. Open Chrome and go to `chrome://extensions`
 3. Enable **Developer mode**
+<img src="https://github.com/user-attachments/assets/400b1b61-7b62-4728-a59b-259d5e7eec31"  alt="ThreadSnap Architecture" width="550">
+
 4. Click **Load unpacked**
+<img src="https://github.com/user-attachments/assets/b4a52b48-a783-4b05-9e12-01dc4ef0bc5f"  alt="ThreadSnap Architecture" width="550">
+
 5. Select the ThreadSnap project folder
 
 The extension will now appear in your browser.
