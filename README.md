@@ -1,10 +1,18 @@
 # ThreadSnap
 
+<p align="center">
+  <img src="https://github.com/Sudharsan-T/ThreadSnap/blob/master/THREADSNAP-Arch.png" alt="ThreadSnap Architecture" width="800">
+</p>
+
+> High-level architecture of ThreadSnap running entirely in the browser.
+
 ThreadSnap is a local Chrome extension for extracting and carrying AI chat context between sessions.
 
 It is designed for users who work in long AI conversations and want a clean, reliable way to continue those conversations in a fresh chat window without relying on server-side storage or heavy APIs.
 
 ThreadSnap runs entirely on the user’s machine.
+
+
 
 ---
 
